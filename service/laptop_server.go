@@ -11,50 +11,54 @@ import (
 	"google.golang.org/grpc/status"
 )
 
-type LaptopService struct {
+type LaptopServer struct {
 	Store LaptopStore
 }
 
-func NewLaptopServer(store LaptopStore) *LaptopService {
-	return &LaptopService{store}
+func NewLaptopServer(store LaptopStore) *LaptopServer {
+	return &LaptopServer{store}
 }
 
-func (server *LaptopService) CreateLaptop(
+func (server *LaptopServer) CreateLaptop(
 	ctx context.Context,
 	req *pb.CreateLaptopRequest,
-	) (*pb.CreateLaptopResponse, error){
-		laptop := req.GetLaptop()
-		log.Printf("Receive a create-laptop request with id: %s", laptop.Id)
-		
-		if len(laptop.Id) > 0 {
-			// check if it's a valid UUID
-			_, err := uuid.Parse(laptop.Id)
+) (*pb.CreateLaptopResponse, error) {
+	laptop := req.GetLaptop()
+	log.Printf("Receive a create-laptop request with id: %s", laptop.Id)
 
-			if err != nil {
-				return nil, status.Errorf(codes.InvalidArgument, "laptop Id is not a valid UUID: %v", err)
-			}
-		}else {
-			id, err := uuid.NewRandom()
-			if err != nil{
-				return nil, status.Errorf(codes.Internal, "cannot generate a new laptop Id : %v", err)
-			}
-			laptop.Id = id.String()
+	if len(laptop.Id) > 0 {
+		// check if it's a valid UUID
+		_, err := uuid.Parse(laptop.Id)
+
+		if err != nil {
+			return nil, status.Errorf(codes.InvalidArgument, "laptop Id is not a valid UUID: %v", err)
 		}
+	} else {
+		id, err := uuid.NewRandom()
+		if err != nil {
+			return nil, status.Errorf(codes.Internal, "cannot generate a new laptop Id : %v", err)
+		}
+		laptop.Id = id.String()
+	}
 
-	// save the laptop to  store 
+	// save the laptop to  store
 	err := server.Store.Save(laptop)
 	if err != nil {
 		code := codes.Internal
 
-        if errors.Is(err, ErrAlreadyExists) {
-            code = codes.AlreadyExists
-        }
+		if errors.Is(err, ErrAlreadyExists) {
+			code = codes.AlreadyExists
+		}
 		return nil, status.Errorf(code, "cannot save laptop to the store : %v", err)
 	}
-	log.Printf("save laptop with id : %v", laptop.Id)
+	log.Printf("save laptop with id : %s", laptop.Id)
 
 	res := &pb.CreateLaptopResponse{
 		Id: laptop.Id,
 	}
 	return res, nil
+}
+
+func (server *LaptopServer) mustEmbedUnimplementedLaptopServiceServer() {
+	log.Printf("save la")
 }
