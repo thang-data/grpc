@@ -1,0 +1,20 @@
+syntax = "proto3";
+
+package dem1;
+option go_package = ".;pb";
+
+
+import "proto/memory_message.proto";
+
+message Keyboard {
+    enum Layout {
+        UNKNOWN = 0;
+        OWERTY = 1;
+        OWERTZ = 2;
+        AZERTY = 3;
+    }
+
+    Layout layout = 1;
+    bool backlit = 2;
+    
+}
