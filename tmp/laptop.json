@@ -1,27 +1,27 @@
 {
-  "id": "2ddda4ad-6a2d-4f2a-b3a0-2c6de0e08516",
-  "brand": "Dell",
-  "name": "Alienware",
+  "id": "6f079584-c019-42ab-b56e-d000bef1b755",
+  "brand": "Apple",
+  "name": "Macbook Air",
   "cpu": {
     "brand": "AMD",
     "name": "RYzen 5 PRO 3500U",
-    "number_cores": 3,
-    "number_threads": 3,
-    "min_ghz": 2.9405219151947612,
-    "max_ghz": 4.54884577026934
+    "number_cores": 4,
+    "number_threads": 10,
+    "min_ghz": 2.001740016057909,
+    "max_ghz": 2.3142859514327427
   },
   "ram": {
-    "value": "33",
+    "value": "47",
     "unit": "GIGABYTE"
   },
   "gpus": [
     {
-      "brand": "AMD",
-      "name": "RX Vega-56",
-      "max_ghz": 1.617384754058049,
-      "min_ghz": 1.421553792344322,
+      "brand": "NVIDIA",
+      "name": "GTX 1680-Ti",
+      "max_ghz": 1.766168606292589,
+      "min_ghz": 1.3408466634577372,
       "memory": {
-        "value": "3",
+        "value": "6",
         "unit": "GIGABYTE"
       }
     }
@@ -30,7 +30,7 @@
     {
       "driver": "SSD",
       "memory": {
-        "value": "872",
+        "value": "219",
         "unit": "GIGABYTE"
       }
     },
@@ -43,20 +43,20 @@
     }
   ],
   "screen": {
-    "size_inch": 26.258879,
+    "size_inch": 29.996899,
     "resolution": {
-      "width": 2931,
-      "height": 1649
+      "width": 7265,
+      "height": 4087
     },
     "panel": "IPS",
-    "multitouch": false
+    "multitouch": true
   },
   "keyboard": {
     "layout": "OWERTY",
-    "backlit": false
+    "backlit": true
   },
-  "weight_kg": 1.4012003829844903,
-  "price_usd": 1683.4191446836803,
-  "release_year": 2017,
-  "updated_at": "2022-04-22T06:28:07.436646700Z"
+  "weight_kg": 1.838830018362465,
+  "price_usd": 1964.5733653687637,
+  "release_year": 2016,
+  "updated_at": "2022-04-26T08:32:38.054115Z"
 }

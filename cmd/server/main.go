@@ -18,7 +18,9 @@ func main() {
 
 	log.Printf("Starting server on port %d", port)
 
-	laptopServer := service.NewLaptopServer(service.NewInMemoryLaptopStore())
+	laptopStore := service.NewInMemoryLaptopStore()
+	imageStore := service.NewDiskImageStore("img")
+	laptopServer := service.NewLaptopServer(laptopStore,imageStore)
 
 	grpcServer := grpc.NewServer()
 	pb.RegisterLaptopServiceServer(grpcServer, laptopServer)
@@ -28,12 +30,12 @@ func main() {
 	listener, err := net.Listen("tcp", address)
 
 	if err != nil {
-		log.Printf("cannot connect to server: ", err)
+		log.Print("cannot connect to server: ", err)
 	}
 
 	err = grpcServer.Serve(listener)
 
 	if err != nil {
-		log.Printf("cannot connect to server: ", err)
+		log.Print("cannot connect to server: ", err)
 	}
 }

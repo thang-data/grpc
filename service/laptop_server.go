@@ -1,25 +1,35 @@
 package service
 
 import (
+	"bytes"
 	"context"
 	"errors"
+	"io"
 	"log"
 
 	// "time"
 
+	// "time"
+
 	"github.com/google/uuid"
+	"github.com/goombaio/namegenerator"
 	"gitlab.com/dem1/dem1/pb"
 	"google.golang.org/grpc/codes"
 	"google.golang.org/grpc/status"
 )
 
+// maximum 1 megabyte
+
+const maxImageSize = 1 << 20
+
 type LaptopServer struct {
-	Store LaptopStore
+	laptopStore LaptopStore
+	imageStore  ImageStore
 	pb.UnimplementedLaptopServiceServer
 }
 
-func NewLaptopServer(store LaptopStore) *LaptopServer {
-	return &LaptopServer{store, pb.UnimplementedLaptopServiceServer{}}
+func NewLaptopServer(laptopStore LaptopStore, imageStore ImageStore) *LaptopServer {
+	return &LaptopServer{laptopStore, imageStore, pb.UnimplementedLaptopServiceServer{}}
 }
 
 func (server *LaptopServer) CreateLaptop(
@@ -46,18 +56,11 @@ func (server *LaptopServer) CreateLaptop(
 	// some heavy processing
 
 	//time.Sleep(6 * time.Second)
-	if ctx.Err() == context.Canceled {
-		log.Print("request is canceled")
-		return nil, status.Errorf(codes.Canceled, "request is canceled")
+	if err := contextError(ctx); err != nil {
+		return nil, err
 	}
-
-	if ctx.Err() == context.DeadlineExceeded {
-		log.Print("deadline is exceeded")
-		return nil, status.Error(codes.DeadlineExceeded, "deadline is exceeded")
-	}
-
 	// save the laptop to  store
-	err := server.Store.Save(laptop)
+	err := server.laptopStore.Save(laptop)
 	if err != nil {
 		code := codes.Internal
 
@@ -86,9 +89,8 @@ func (server *LaptopServer) SearchLaptop(
 ) error {
 	filter := req.GetFilter()
 	log.Printf("receive a search-laptop request with filter: %v", filter)
-	log.Print(server.Store)
 
-	err := server.Store.Search(
+	err := server.laptopStore.Search(
 		stream.Context(),
 		filter,
 		func(laptop *pb.Laptop) error {
@@ -108,4 +110,111 @@ func (server *LaptopServer) SearchLaptop(
 	}
 
 	return nil
+}
+
+// UploadImage is a client-streaming RPC to upload a laptop image
+func (server *LaptopServer) UploadImage(stream pb.LaptopService_UploadImageServer) error {
+	req, err := stream.Recv()
+	if err != nil {
+		return logError(status.Errorf(codes.Unknown, "cannot receive image info"))
+	}
+
+	laptopID := req.GetInfo().GetLaptopId()
+	imageType := req.GetInfo().GetImageType()
+
+	log.Printf("recive an upload image request for laptop %s with image type %s", laptopID, imageType)
+
+	laptop, err := server.laptopStore.Find(laptopID)
+	if err != nil {
+		return logError(status.Errorf(codes.Internal, "cannot find laptop %v", err))
+	}
+
+	if laptop == nil {
+		return logError(status.Errorf(codes.InvalidArgument, "laptop %s does not exist", laptopID))
+	}
+	imageData := bytes.Buffer{}
+
+	imageSize := 0
+
+	for {
+		// check context error
+
+		if err := contextError(stream.Context()); err != nil {
+			return err
+		}
+		log.Print("waiting to recive more data...")
+
+		req, err := stream.Recv()
+
+		if err == io.EOF {
+			log.Print("not found")
+			break
+		}
+		if err != nil {
+			return logError(status.Errorf(codes.Internal, "cannot receive chunk data: %v", err))
+		}
+
+		chunk := req.GetChunkData()
+
+		size := len(chunk)
+
+		imageSize += size
+
+		if imageSize > maxImageSize {
+			return logError(status.Errorf(codes.InvalidArgument, "image is too large: %d > %d", imageSize, maxImageSize))
+		}
+
+		// add slowly
+		// time.Sleep(time.Second)
+		_, err = imageData.Write(chunk)
+		if err != nil {
+			return logError(status.Errorf(codes.Internal, "cannot write chunk data: %v", err))
+		}
+	}
+
+	imageID, err := server.imageStore.Save(laptopID, imageType, imageData)
+	if err != nil {
+		return logError(status.Errorf(codes.Internal, "cannot save image ID: %v", err))
+	}
+
+	res := &pb.UploadImageResponse{
+		Id:   imageID,
+		Size: uint32(imageSize),
+	}
+
+	err = stream.SendAndClose(res)
+
+	if err != nil {
+		return logError(status.Errorf(codes.Unknown, "cannot send response: %v", err))
+	}
+	b := namegenerator.NewNameGenerator(int64(len(imageID)))
+	name := b.Generate()
+
+	log.Printf("saved image with : %s, size: %d", name, imageSize)
+	return nil
+}
+
+// RateLaptop is a bidirectional-streaming RPC that allows client to rate a stream of laptops
+// with a score, and returns a stream of average score for each of them
+func (server *LaptopServer) RateLaptop(stream pb.LaptopService_RateLaptopServer) error {
+	return nil
+}
+
+func contextError(ctx context.Context) error {
+
+	switch ctx.Err() {
+	case context.Canceled:
+		return logError(status.Errorf(codes.Canceled, "request is canceled"))
+	case context.DeadlineExceeded:
+		return logError(status.Error(codes.DeadlineExceeded, "deadline is exceeded"))
+	default:
+		return nil
+	}
+}
+
+func logError(err error) error {
+	if err != nil {
+		log.Print(err)
+	}
+	return err
 }

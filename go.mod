@@ -10,6 +10,8 @@ require (
 	google.golang.org/protobuf v1.28.0
 )
 
+require github.com/goombaio/namegenerator v0.0.0-20181006234301-989e774b106e // indirect
+
 require (
 	github.com/davecgh/go-spew v1.1.0 // indirect
 	github.com/jinzhu/copier v0.3.5
