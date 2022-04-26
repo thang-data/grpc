@@ -62,13 +62,12 @@ func (store *InMemoryLaptopStore) Save(laptop *pb.Laptop) error {
 		return ErrAlreadyExists
 	}
 
-	// deep copy
 	other, err := deepCopy(laptop)
 	if err != nil {
 		return err
 	}
 
-	store.data[laptop.Id] = other
+	store.data[other.Id] = other
 	return nil
 }
 
@@ -83,7 +82,7 @@ func (store *InMemoryLaptopStore) Search(
 	for _, laptop := range store.data {
 		if ctx.Err() == context.Canceled || ctx.Err() == context.DeadlineExceeded {
 			log.Print("context is cancelled")
-			return nil
+			return errors.New("context is not")
 		}
 
 		// time.Sleep(time.Second)
@@ -132,7 +131,7 @@ func toBit(memory *pb.Memory) uint64 {
 	case pb.Memory_BYTE:
 		return value << 3 // 8 = 2^3
 	case pb.Memory_KILOBYTE:
-		return value * 1024 * 8 // 1024 * = 2 ^ 10 * 2 ^ 3 = 2^ 13
+		return value <<13 // 1024 * = 2 ^ 10 * 2 ^ 3 = 2^ 13
 	case pb.Memory_MEGABYTE:
 		return value << 23
 	case pb.Memory_GIGABYTE:

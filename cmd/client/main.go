@@ -93,10 +93,10 @@ func main() {
 		createLaptop(laptopClient)
 	}
 	filter := &pb.Filter{
-		MaxPriceUsd: 3000,
+		MaxPriceUsd: 2000,
 		MinCpuCores: 4,
 		MinCpuGhz:   2.5,
-		MinRam:      &pb.Memory{Value: 8, Unit: pb.Memory_BYTE},
+		MinRam:      &pb.Memory{Value: 8, Unit: pb.Memory_GIGABYTE},
 	}
 	searchLaptop(laptopClient, filter)
 }

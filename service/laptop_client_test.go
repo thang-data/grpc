@@ -46,8 +46,8 @@ func TestClientSeachLaptop(t *testing.T) {
 	filter := &pb.Filter{
 		MaxPriceUsd: 2000,
 		MinCpuCores: 4,
-		MinCpuGhz: 2.2,
-		MinRam: &pb.Memory{Value: 8, Unit: pb.Memory_GIGABYTE},
+		MinCpuGhz:   2.2,
+		MinRam:      &pb.Memory{Value: 8, Unit: pb.Memory_GIGABYTE},
 	}
 	store := service.NewInMemoryLaptopStore()
 	expectedIDs := make(map[string]bool)
@@ -68,7 +68,7 @@ func TestClientSeachLaptop(t *testing.T) {
 			laptop.PriceUsd = 1999
 			laptop.Cpu.NumberCores = 4
 			laptop.Cpu.MinGhz = 2.5
-			laptop.Cpu.MaxGhz = 4.5
+			laptop.Cpu.MaxGhz = 4.0
 			laptop.Ram = &pb.Memory{Value: 16, Unit: pb.Memory_GIGABYTE}
 			expectedIDs[laptop.Id] = true
 		case 5:
@@ -89,6 +89,7 @@ func TestClientSeachLaptop(t *testing.T) {
 	req := &pb.SearchLaptopRequest{Filter: filter}
 	stream, err := laptopClient.SearchLaptop(context.Background(), req)
 	require.NoError(t, err)
+	// require.NotNil(t, err)
 
 	found := 0
 	for {
@@ -100,7 +101,7 @@ func TestClientSeachLaptop(t *testing.T) {
 		require.NoError(t, err)
 		require.Contains(t, expectedIDs, res.GetLaptop().GetId())
 
-		found +=1
+		found += 1
 	}
 	require.Equal(t, len(expectedIDs), found)
 
@@ -115,7 +116,7 @@ func requireSameLaptop(t *testing.T, laptop1 *pb.Laptop, laptop2 *pb.Laptop) {
 	require.Equal(t, json1, json2)
 }
 func startTestLaptopServer(t *testing.T, store service.LaptopStore) (*service.LaptopServer, string) {
-	laptopServer := service.NewLaptopServer(service.NewInMemoryLaptopStore())
+	laptopServer := service.NewLaptopServer(store)
 	grpcServer := grpc.NewServer()
 	pb.RegisterLaptopServiceServer(grpcServer, laptopServer)
 
